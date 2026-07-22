@@ -22,6 +22,7 @@ def test_should_create_and_return_task(client, session):
     created_task = create_response.json()
 
     assert created_task["title"] == "Apprendre FastAPI"
+    assert created_task["status"] == "TODO"
 
     db_tasks = session.query(Task).all()
 
@@ -34,3 +35,4 @@ def test_should_create_and_return_task(client, session):
 
     assert len(tasks) == 1
     assert tasks[0]["title"] == "Apprendre FastAPI"
+    assert tasks[0]["status"] == "TODO"

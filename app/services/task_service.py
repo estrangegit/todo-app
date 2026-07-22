@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session
 
+from app.enums.task_status import TaskStatus
 from app.exceptions.task import TaskNotFoundException
 from app.models.task import Task
 from app.schemas.task import TaskCreate, TaskUpdate
@@ -8,7 +9,8 @@ from app.schemas.task import TaskCreate, TaskUpdate
 class TaskService:
     def create_task(self, db: Session, task_create: TaskCreate) -> Task:
         task = Task(
-            title=task_create.title
+            title=task_create.title,
+            status=TaskStatus.TODO
         )
 
         db.add(task)
@@ -23,11 +25,10 @@ class TaskService:
     def update_task(self, db: Session, task_id: int, task_update: TaskUpdate) -> Task:
         task = self._get_task_or_404(db, task_id)
 
-        if task_update.title is not None:
-            task.title = task_update.title
+        update_data = task_update.model_dump(exclude_unset=True)
 
-        if task_update.completed is not None:
-            task.completed = task_update.completed
+        for field, value in update_data.items():
+            setattr(task, field, value)
 
         db.commit()
         db.refresh(task)

@@ -1,5 +1,7 @@
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from app.enums.task_status import TaskStatus
+
 
 class TaskCreate(BaseModel):
     title: str = Field(min_length=1, max_length=255)
@@ -17,10 +19,10 @@ class TaskCreate(BaseModel):
 class TaskResponse(BaseModel):
     id: int
     title: str
-    completed: bool
+    status: TaskStatus
 
     model_config = ConfigDict(from_attributes=True)
 
 class TaskUpdate(BaseModel):
     title: str | None = Field(default=None, min_length=1, max_length=255)
-    completed: bool | None = None
+    status: TaskStatus | None = None
