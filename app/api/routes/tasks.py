@@ -24,7 +24,7 @@ def create_task(
     task_service: TaskService = Depends(get_task_service),
     current_user: User = Depends(require_roles(UserRole.ADMIN, UserRole.USER))
 ):
-    return task_service.create_task(db, task_create)
+    return task_service.create_task(db, task_create, current_user)
 
 @router.get("", response_model=TaskPage)
 def get_tasks(

@@ -47,8 +47,8 @@ def auth_headers(client: TestClient, username: str = "john", password: str = "se
 
 # ========= Tasks =========
 
-def create_task(session: Session, title: str = "Task", status: TaskStatus = TaskStatus.TODO) -> Task:
-    task = Task(title=title, status=status)
+def create_task(session: Session, owner: User, title: str = "Task", status: TaskStatus = TaskStatus.TODO) -> Task:
+    task = Task(title=title, status=status, owner=owner)
     session.add(task)
     session.commit()
     session.refresh(task)

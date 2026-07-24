@@ -1,21 +1,21 @@
-from math import ceil
-
 from sqlalchemy.orm import Session, Query
 
+from app.domain.page import Page
 from app.enums.sort_direction import SortDirection
 from app.enums.task_sort_field import TaskSortField
 from app.enums.task_status import TaskStatus
 from app.exceptions.task_not_found_exception import TaskNotFoundException
 from app.models.task import Task
+from app.models.user import User
 from app.schemas.task import TaskCreate, TaskUpdate
-from app.domain.page import Page
 
 
 class TaskService:
-    def create_task(self, db: Session, task_create: TaskCreate) -> Task:
+    def create_task(self, db: Session, task_create: TaskCreate, owner: User) -> Task:
         task = Task(
             title=task_create.title,
-            status=TaskStatus.TODO
+            status=TaskStatus.TODO,
+            owner=owner,
         )
 
         db.add(task)
