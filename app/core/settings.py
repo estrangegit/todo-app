@@ -1,7 +1,5 @@
 from functools import lru_cache
-
 from pydantic_settings import BaseSettings, SettingsConfigDict
-
 from app.core.config import Environment, get_current_environment
 
 
@@ -22,6 +20,10 @@ class Settings(BaseSettings):
     debug: bool = False
 
     database_url: str
+
+    jwt_secret_key: str
+    jwt_algorithm: str = "HS256"
+    jwt_access_token_expire_minutes: int = 30
 
     model_config = SettingsConfigDict(
         env_file=get_env_file(),

@@ -3,11 +3,15 @@ from sqlalchemy.orm import Session
 
 from app.enums.task_status import TaskStatus
 from app.models import Task
-from tests.helpers import clear_database, create_task
+from tests.helpers import clear_database, create_task, get_access_token, create_user, auth_headers
+
 
 def test_get_tasks_returns_empty_list(client: TestClient, session: Session):
     clear_database(session)
-    response = client.get("/tasks")
+
+    create_user(session)
+    response = client.get("/tasks", headers=auth_headers(client))
+
     assert response.status_code == 200
 
     data = response.json()
@@ -21,9 +25,11 @@ def test_get_tasks_returns_empty_list(client: TestClient, session: Session):
 def test_should_create_and_return_task(client: TestClient, session: Session):
     clear_database(session)
 
+    create_user(session)
     create_response = client.post(
         "/tasks",
-        json={"title": "Apprendre FastAPI"}
+        json={"title": "Apprendre FastAPI"},
+        headers=auth_headers(client)
     )
     assert create_response.status_code == 201
 
@@ -37,7 +43,7 @@ def test_should_create_and_return_task(client: TestClient, session: Session):
     assert len(db_tasks) == 1
     assert db_tasks[0].title == "Apprendre FastAPI"
 
-    get_response = client.get("/tasks")
+    get_response = client.get("/tasks", headers=auth_headers(client))
     assert get_response.status_code == 200
 
     data = get_response.json()
@@ -60,7 +66,8 @@ def test_get_tasks_with_pagination(client: TestClient, session: Session):
     for i in range(25):
         create_task(session, title=f"Task {i}")
 
-    response = client.get("/tasks?page=0&size=10")
+    create_user(session)
+    response = client.get("/tasks?page=0&size=10", headers=auth_headers(client))
 
     data = response.json()
 
@@ -76,7 +83,8 @@ def test_get_tasks_filtered(client: TestClient, session: Session):
     create_task(session, status=TaskStatus.TODO)
     create_task(session, status=TaskStatus.DONE)
 
-    response = client.get("/tasks?status=TODO")
+    create_user(session)
+    response = client.get("/tasks?status=TODO", headers=auth_headers(client))
 
     data = response.json()
 
@@ -92,7 +100,8 @@ def test_should_return_tasks_sorted_by_title_ascending(client: TestClient, sessi
     create_task(session, title="Bravo", status=TaskStatus.TODO)
 
     # When
-    response = client.get("/tasks?sort=title&direction=asc")
+    create_user(session)
+    response = client.get("/tasks?sort=title&direction=asc", headers=auth_headers(client))
 
     # Then
     assert response.status_code == 200
@@ -118,7 +127,8 @@ def test_should_return_tasks_sorted_by_title_descending(client: TestClient, sess
     create_task(session, title="Bravo", status=TaskStatus.TODO)
 
     # When
-    response = client.get("/tasks?sort=title&direction=desc")
+    create_user(session)
+    response = client.get("/tasks?sort=title&direction=desc", headers=auth_headers(client))
 
     # Then
     assert response.status_code == 200

@@ -1,6 +1,5 @@
 from pwdlib import PasswordHash
 
-
 class PasswordService:
 
     def __init__(self):

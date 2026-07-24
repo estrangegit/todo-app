@@ -5,14 +5,15 @@ from sqlalchemy.orm import Session
 from app.enums.user_role import UserRole
 from app.models import User
 from app.services.password_service import PasswordService
-from tests.helpers import clear_database, create_user
+from tests.helpers import clear_database, create_user, get_access_token, auth_headers
+
 
 def test_should_create_and_return_user(client: TestClient, session: Session, password_service: PasswordService):
     clear_database(session)
 
     create_response = client.post(
         "/users",
-        json={"username": "user_1", "password": "password_user_1"},
+        json={"username": "user_1", "password": "password_user_1"}
     )
     assert create_response.status_code == 201
 
@@ -38,13 +39,12 @@ def test_should_create_and_return_user(client: TestClient, session: Session, pas
 def test_should_return_conflict_when_username_already_exists(client: TestClient, session: Session):
     # Given
     clear_database(session)
-
     create_user(session, username="user_1", password="password")
 
     # When
     response = client.post(
         "/users",
-        json={"username": "user_1", "password": "another_password"},
+        json={"username": "user_1", "password": "another_password"}
     )
 
     # Then

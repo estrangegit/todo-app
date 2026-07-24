@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session, Query
 from app.enums.sort_direction import SortDirection
 from app.enums.task_sort_field import TaskSortField
 from app.enums.task_status import TaskStatus
-from app.exceptions.task import TaskNotFoundException
+from app.exceptions.task_not_found_exception import TaskNotFoundException
 from app.models.task import Task
 from app.schemas.task import TaskCreate, TaskUpdate
 from app.domain.page import Page
