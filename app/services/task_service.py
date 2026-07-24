@@ -1,3 +1,4 @@
+from sqlalchemy import select
 from sqlalchemy.orm import Session, Query
 
 from app.domain.page import Page
@@ -26,6 +27,7 @@ class TaskService:
 
     def get_tasks(self,
                   db: Session,
+                  current_user: User,
                   status: TaskStatus | None = None,
                   sort: TaskSortField = TaskSortField.ID,
                   direction: SortDirection = SortDirection.ASC,
@@ -33,6 +35,7 @@ class TaskService:
                   size: int = 20) -> Page[Task]:
 
         query = db.query(Task)
+        query = query.filter(Task.owner == current_user)
 
         if status is not None:
             query = query.filter(Task.status == status)
@@ -48,8 +51,8 @@ class TaskService:
 
         return Page(items=items, page=page, size=size, total_items=total_items)
 
-    def update_task(self, db: Session, task_id: int, task_update: TaskUpdate) -> Task:
-        task = self._get_task_or_404(db, task_id)
+    def update_task(self, db: Session, current_user: User, task_id: int, task_update: TaskUpdate) -> Task:
+        task = self._get_task_or_404(db, current_user, task_id)
 
         update_data = task_update.model_dump(exclude_unset=True)
 
@@ -61,17 +64,18 @@ class TaskService:
 
         return task
 
-    def get_task(self, db: Session, task_id: int) -> Task:
-        task = self._get_task_or_404(db, task_id)
+    def get_task(self, db: Session, current_user: User, task_id: int) -> Task:
+        task = self._get_task_or_404(db, current_user, task_id)
         return task
 
-    def delete_task(self, db: Session, task_id: int) -> None:
-        task = self._get_task_or_404(db, task_id)
+    def delete_task(self, db: Session, current_user: User, task_id: int) -> None:
+        task = self._get_task_or_404(db, current_user, task_id)
         db.delete(task)
         db.commit()
 
-    def _get_task_or_404(self, db: Session, task_id: int) -> Task:
-        task = db.get(Task, task_id)
+    def _get_task_or_404(self, db: Session, current_user: User, task_id: int) -> Task:
+        stmt = select(Task).where(Task.id == task_id, Task.owner_id == current_user.id)
+        task = db.scalar(stmt)
 
         if task is None:
             raise TaskNotFoundException()

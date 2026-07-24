@@ -37,7 +37,7 @@ def get_tasks(
     task_service: TaskService = Depends(get_task_service),
     current_user: User = Depends(require_roles(UserRole.ADMIN, UserRole.USER))
 ):
-    page = task_service.get_tasks(db, status, sort, direction, page, size)
+    page = task_service.get_tasks(db, current_user, status, sort, direction, page, size)
 
     return TaskPage(
         items=page.items,
@@ -55,7 +55,7 @@ def update_task(
     task_service: TaskService = Depends(get_task_service),
     current_user: User = Depends(require_roles(UserRole.ADMIN, UserRole.USER))
 ):
-    return task_service.update_task(db, task_id, task_update)
+    return task_service.update_task(db, current_user, task_id, task_update)
 
 @router.get("/{task_id}", response_model=TaskResponse)
 def get_task(
@@ -64,7 +64,7 @@ def get_task(
     task_service: TaskService = Depends(get_task_service),
     current_user: User = Depends(require_roles(UserRole.ADMIN, UserRole.USER))
 ):
-    return task_service.get_task(db, task_id)
+    return task_service.get_task(db, current_user, task_id)
 
 @router.delete("/{task_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_task(
@@ -73,5 +73,5 @@ def delete_task(
     task_service: TaskService = Depends(get_task_service),
     current_user: User = Depends(require_roles(UserRole.ADMIN, UserRole.USER))
 ):
-    task_service.delete_task(db, task_id)
+    task_service.delete_task(db, current_user, task_id)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
