@@ -4,6 +4,7 @@ from enum import StrEnum
 
 class Environment(StrEnum):
     DEV = "dev"
+    DOCKER = "docker"
     TEST = "test"
     PROD = "prod"
 

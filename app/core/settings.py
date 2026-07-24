@@ -5,6 +5,7 @@ from app.core.config import Environment, get_current_environment
 
 ENV_FILES = {
     Environment.DEV: ".env.dev",
+    Environment.DOCKER: ".env.docker",
     Environment.TEST: ".env.test",
     Environment.PROD: ".env.prod",
 }

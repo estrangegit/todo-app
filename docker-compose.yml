@@ -3,8 +3,37 @@ services:
     container_name: todo_db
     image: postgres:17
     env_file:
-      - .env.db
+      - .env.db.docker
     ports:
       - "5432:5432"
     volumes:
       - ./data/postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready --username=$$POSTGRES_USER --dbname=$$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    container_name: todo_backend
+    build:
+      context: .
+      dockerfile: docker/backend/Dockerfile
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - .env.docker
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+    command:
+      [
+        "uvicorn",
+        "app.main:app",
+        "--host",
+        "0.0.0.0",
+        "--reload"
+      ]
+    restart: unless-stopped
