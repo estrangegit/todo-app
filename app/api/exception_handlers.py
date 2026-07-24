@@ -2,6 +2,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from starlette import status
 
+from app.exceptions.access_denied_exception import AccessDeniedException
 from app.exceptions.invalid_credentials_exception import InvalidCredentialsException
 from app.exceptions.invalid_token_exception import InvalidTokenException
 from app.exceptions.task_not_found_exception import TaskNotFoundException
@@ -13,7 +14,7 @@ def register_exception_handlers(app: FastAPI) -> None:
     @app.exception_handler(TaskNotFoundException)
     async def task_not_found_handler(request: Request, exc: TaskNotFoundException):
         return JSONResponse(
-            status_code=404,
+            status_code=status.HTTP_404_NOT_FOUND,
             content={"detail": "Task not found"},
         )
 
@@ -38,7 +39,18 @@ def register_exception_handlers(app: FastAPI) -> None:
         exc: InvalidTokenException,
     ):
         return JSONResponse(
-            status_code=401,
+            status_code=status.HTTP_401_UNAUTHORIZED,
             content={"detail": "Invalid authentication credentials"},
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    @app.exception_handler(AccessDeniedException)
+    async def access_denied_exception_handler(
+        request: Request,
+        exc: InvalidTokenException,
+    ):
+        return JSONResponse(
+            status_code=status.HTTP_403_FORBIDDEN,
+            content={"detail": str(exc)},
             headers={"WWW-Authenticate": "Bearer"},
         )

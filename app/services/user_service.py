@@ -1,3 +1,5 @@
+from ast import List
+
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 from app.exceptions.user_already_exists_exception import UserAlreadyExistsException
@@ -34,3 +36,7 @@ class UserService:
         existing_user = (db.query(User).filter(User.username == username).first())
         if existing_user is not None:
             raise UserAlreadyExistsException(username)
+
+    def get_users(self, db: Session) -> list[User]:
+        stmt = select(User).order_by(User.id.asc())
+        return db.scalars(stmt).all()
