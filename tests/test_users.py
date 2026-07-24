@@ -4,9 +4,10 @@ from sqlalchemy.orm import Session
 
 from app.enums.user_role import UserRole
 from app.models import User
+from app.services.password_service import PasswordService
 from tests.helpers import clear_database, create_user
 
-def test_should_create_and_return_user(client: TestClient, session: Session):
+def test_should_create_and_return_user(client: TestClient, session: Session, password_service: PasswordService):
     clear_database(session)
 
     create_response = client.post(
@@ -25,6 +26,14 @@ def test_should_create_and_return_user(client: TestClient, session: Session):
     assert len(db_users) == 1
     assert db_users[0].username == "user_1"
     assert db_users[0].role == UserRole.USER
+
+    assert db_users[0].password_hash != "password_user_1"
+
+    assert password_service.verify(
+        "password_user_1",
+        db_users[0].password_hash,
+    )
+
 
 def test_should_return_conflict_when_username_already_exists(client: TestClient, session: Session):
     # Given

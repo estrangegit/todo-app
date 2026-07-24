@@ -1,5 +1,7 @@
 import os
 
+from app.services.password_service import PasswordService
+
 os.environ["APP_ENV"] = "test"
 
 from collections.abc import Generator
@@ -24,3 +26,7 @@ def session() -> Generator[Session, None, None]:
         yield db
     finally:
         db.close()
+
+@pytest.fixture
+def password_service():
+    return PasswordService()
