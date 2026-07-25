@@ -1,232 +1,223 @@
-# Todo API
+# Todo App
 
-A RESTful Todo API built with **FastAPI**, **SQLAlchemy**, and **PostgreSQL**.
+A full-stack Todo application built to explore modern backend and frontend development.
 
-This project was created as a learning exercise to explore the FastAPI ecosystem while following practices commonly used in production backend applications, including:
+The project is composed of:
 
-- Layered architecture
-- JWT authentication
+- **Backend:** FastAPI, SQLAlchemy, Alembic, PostgreSQL
+- **Frontend:** Vue 3, TypeScript, Vite, Pinia, Vue Router
+- **Infrastructure:** Docker & Docker Compose
+
+---
+
+# Features
+
+## Backend
+
+- REST API with FastAPI
+- JWT Authentication
 - Role-based authorization
-- Database migrations with Alembic
-- Integration testing
-- Docker-based development
-- GitLab CI
-
----
-
-# 🚀 Tech Stack
-
-- Python 3.14
-- FastAPI
-- SQLAlchemy
+- Todo ownership
+- SQLAlchemy ORM
+- Alembic database migrations
 - PostgreSQL
-- Alembic
-- Pytest
-- Docker & Docker Compose
-- GitLab CI
+- Pytest test suite
+
+## Frontend
+
+- Vue 3
+- TypeScript
+- Pinia state management
+- Vue Router
+- Vite
+- ESLint
+- Prettier
 
 ---
 
-# 📋 Prerequisites
+# Project Structure
 
-Install the following tools:
+```text
+todo-app/
+├── backend/
+│   ├── app/
+│   ├── tests/
+│   ├── Dockerfile.dev
+│   ├── requirements.txt
+│   └── ...
+│
+├── frontend/
+│   ├── src/
+│   ├── public/
+│   ├── Dockerfile.dev
+│   ├── package.json
+│   └── ...
+│
+├── docker-compose.dev.yml
+├── docker-compose.test.yml
+└── README.md
+```
 
-- Git
+---
+
+# Prerequisites
+
+## Local development
+
+- Python 3.13+
+- Node.js 22+
 - Docker Desktop
-- Python 3.14 (required only for local debugging with PyCharm Community)
+
+## Docker development
+
+Only Docker Desktop is required.
 
 ---
 
-# ⚙️ Installation
+# Development
 
-Clone the repository:
+Build and start the complete development environment.
 
 ```bash
-git clone <repository-url>
-cd todo-api
+docker compose -f docker-compose.dev.yml up --build
 ```
 
-Create a local virtual environment (optional but recommended for PyCharm Community):
+The following services will be started:
 
-```powershell
+| Service | URL |
+|----------|-----|
+| Frontend | http://localhost:5173 |
+| Backend API | http://localhost:8000 |
+| Swagger UI | http://localhost:8000/docs |
+
+Stop the environment:
+
+```bash
+docker compose -f docker-compose.dev.yml down
+```
+
+---
+
+# Running Tests
+
+Run the complete test environment.
+
+```bash
+docker compose -f docker-compose.test.yml up --build
+```
+
+Or execute the backend tests directly:
+
+```bash
+docker compose -f docker-compose.test.yml run --rm backend pytest
+```
+
+---
+
+# Local Development
+
+Running the application without Docker is still possible.
+
+## Backend
+
+```bash
+cd backend
+
 python -m venv .venv
-.\.venv\Scripts\Activate.ps1
+source .venv/bin/activate
+# Windows:
+# .venv\Scripts\activate
+
 pip install -r requirements.txt
-```
 
----
-
-# 💻 Development
-
-This project supports two development workflows.
-
-## Option 1 — Docker (recommended)
-
-Start the application:
-
-```powershell
-docker compose up --build
-```
-
-The API is available at:
-
-- http://localhost:8000/docs
-- http://localhost:8000/redoc
-
-Stop the application:
-
-```powershell
-docker compose down
-```
-
-Rebuild the image after changing dependencies:
-
-```powershell
-docker compose up --build
-```
-
----
-
-## Option 2 — Local debugging
-
-PyCharm Community does not support Docker interpreters.
-
-For debugging, a local virtual environment is kept while PostgreSQL still runs inside Docker.
-
-Activate the virtual environment:
-
-```powershell
-.\.venv\Scripts\Activate.ps1
-```
-
-Select the environment:
-
-```powershell
-$env:APP_ENV="dev"
-```
-
-Start PostgreSQL:
-
-```powershell
-docker compose up db -d
-```
-
-Apply database migrations:
-
-```powershell
-alembic upgrade head
-```
-
-Run the application:
-
-```powershell
 uvicorn app.main:app --reload
 ```
 
----
+## Frontend
 
-# 🧪 Running the tests
+```bash
+cd frontend
 
-Run the complete integration test suite inside Docker:
+npm install
 
-```powershell
-docker compose -f docker-compose.test.yml run --rm backend
+npm run dev
 ```
-
-Note: The PostgreSQL container remains running after the test execution. To stop and remove all test containers, run:
-
-```powershell
-docker compose -f docker-compose.test.yml down
-```
-
-This command automatically:
-
-- starts PostgreSQL
-- applies Alembic migrations
-- runs the tests
-- removes the test container
 
 ---
 
-# 🛠️ Useful commands
+# Database Migrations
 
-Open a shell inside the backend container:
+Create a migration:
 
-```powershell
-docker compose exec backend sh
+```bash
+alembic revision --autogenerate -m "Description"
 ```
 
 Apply migrations:
 
-```powershell
-docker compose exec backend alembic upgrade head
+```bash
+alembic upgrade head
 ```
 
-Create a migration:
+Rollback:
 
-```powershell
-docker compose exec backend alembic revision --autogenerate -m "description"
-```
-
-Rollback the last migration:
-
-```powershell
-docker compose exec backend alembic downgrade -1
-```
-
-Show the current revision:
-
-```powershell
-docker compose exec backend alembic current
-```
-
-Migration history:
-
-```powershell
-docker compose exec backend alembic history
+```bash
+alembic downgrade -1
 ```
 
 ---
 
-# 📁 Project structure
+# Code Quality
 
-```text
-app/
-├── api/
-├── core/
-├── db/
-├── domain/
-├── enums/
-├── exceptions/
-├── models/
-├── schemas/
-├── services/
-├── dependencies.py
-├── security.py
-└── main.py
+## Backend
 
-tests/
-alembic/
-scripts/
-docker-compose.yml
-docker-compose.test.yml
+Run the tests:
+
+```bash
+pytest
+```
+
+## Frontend
+
+Lint:
+
+```bash
+npm run lint
+```
+
+Format:
+
+```bash
+npm run format
 ```
 
 ---
 
-# 🔄 Continuous Integration
+# Docker
 
-Every push triggers a GitLab CI pipeline that:
+The project currently provides two Docker Compose configurations.
 
-1. Builds the application image
-2. Starts PostgreSQL
-3. Applies the latest Alembic migrations
-4. Runs the integration test suite
+| File | Purpose |
+|------|---------|
+| docker-compose.dev.yml | Development environment |
+| docker-compose.test.yml | Test environment |
+
+A production configuration (`docker-compose.prod.yml`) will be added later.
 
 ---
 
-# 📌 Notes
+# Notes
 
-- The project follows a **Docker-first** workflow.
-- The local virtual environment exists only because **PyCharm Community** cannot use Docker interpreters.
-- The CI pipeline and production environment both run entirely inside Docker.
+The frontend runs inside Docker using Vite.
+
+On Docker Desktop (Windows/macOS), Vite uses polling for file watching to enable Hot Module Replacement (HMR).
+
+---
+
+# Roadmap
+
+- Authentication UI
+- Todo CRUD interface
+- User management
+- Production deployment
+- CI/CD improvements
