@@ -1,12 +1,9 @@
 # Virtual environment
-.venv/
+backend/.venv/
 
 # Python
-__pycache__/
+__pycache__
 *.py[cod]
-
-# Environment
-.env
 
 # Pytest
 .pytest_cache/
@@ -18,8 +15,5 @@ __pycache__/
 # Coverage
 .coverage
 htmlcov/
-
-.env.db
-.env.dev
 
 data/

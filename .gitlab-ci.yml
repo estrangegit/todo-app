@@ -9,11 +9,11 @@ variables:
   POSTGRES_DB: todo_db_test
   POSTGRES_USER: todo_user
   POSTGRES_PASSWORD: 123456
-  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+  PIP_CACHE_DIR: "$CI_PROJECT_DIR/backend/.cache/pip"
 
 cache:
   paths:
-    - .cache/pip
+    - backend/.cache/pip
 
 test:
   stage: test
@@ -23,6 +23,7 @@ test:
       alias: postgres
 
   before_script:
+    - cd backend
     - python --version
     - pip install --upgrade pip
     - pip install -r requirements.txt

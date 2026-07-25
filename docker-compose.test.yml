@@ -14,15 +14,15 @@ services:
 
   backend:
     build:
-      context: .
-      dockerfile: ./docker/backend/Dockerfile
+      context: ./backend
+      dockerfile: Dockerfile
     depends_on:
       db:
         condition: service_healthy
     ports:
       - "8000:8000"
     env_file:
-      - .env.test
+      - ./backend/.env.test
     volumes:
-      - .:/app
+      - ./backend:/app
     command: ./scripts/run-tests.sh

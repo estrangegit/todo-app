@@ -3,7 +3,7 @@ services:
     container_name: todo_db
     image: postgres:17
     env_file:
-      - .env.db.docker
+      - .env.db.dev
     ports:
       - "5432:5432"
     volumes:
@@ -17,17 +17,17 @@ services:
   backend:
     container_name: todo_backend
     build:
-      context: .
-      dockerfile: docker/backend/Dockerfile
+      context: ./backend
+      dockerfile: Dockerfile
     depends_on:
       db:
         condition: service_healthy
     env_file:
-      - .env.docker
+      - ./backend/.env.dev
     ports:
       - "8000:8000"
     volumes:
-      - .:/app
+      - ./backend:/app
     command:
       [
         "uvicorn",
