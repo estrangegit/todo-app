@@ -14,6 +14,8 @@ export default defineConfig({
     watch: {
       usePolling: process.env.CHOKIDAR_USEPOLLING === 'true',
     },
+    host: '0.0.0.0',
+    allowedHosts: ['frontend'],
   },
   resolve: {
     alias: {

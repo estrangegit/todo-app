@@ -2,6 +2,8 @@ from ast import List
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
+
+from app.enums.user_role import UserRole
 from app.exceptions.user_already_exists_exception import UserAlreadyExistsException
 from app.models.user import User
 from app.schemas.user import UserCreate
@@ -16,14 +18,15 @@ class UserService:
         stmt = select(User).where(User.username == username)
         return db.scalar(stmt)
 
-    def create_user(self, db: Session, user_create: UserCreate) -> User:
+    def create_user(self, db: Session, user_create: UserCreate, role: UserRole = UserRole.USER) -> User:
         self._check_username_available(db, user_create.username)
 
         password_hash = self._password_service.hash(user_create.password)
 
         user = User (
             username=user_create.username,
-            password_hash=password_hash
+            password_hash=password_hash,
+            role=role,
         )
 
         db.add(user)
