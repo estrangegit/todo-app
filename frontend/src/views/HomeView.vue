@@ -1,3 +1,17 @@
+<script setup lang="ts">
+import Card from 'primevue/card'
+
+import { useAuthStore } from '@/stores/auth'
+
+const authStore = useAuthStore()
+</script>
+
 <template>
-  <h1>Home</h1>
+  <Card>
+    <template #title> Bienvenue 👋 </template>
+
+    <template #content>
+      <p>Gérez vos tâches grâce au menu de navigation.</p>
+    </template>
+  </Card>
 </template>

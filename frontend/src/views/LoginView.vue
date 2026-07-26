@@ -1,34 +1,44 @@
 <script setup lang="ts">
-import Card from 'primevue/card'
 import Button from 'primevue/button'
+import Card from 'primevue/card'
 import FloatLabel from 'primevue/floatlabel'
 import InputText from 'primevue/inputtext'
-import Password from 'primevue/password'
 import Message from 'primevue/message'
+import Password from 'primevue/password'
 
 import { Form, type FormSubmitEvent } from '@primevue/forms'
 import { zodResolver } from '@primevue/forms/resolvers/zod'
 
+import { ApiError } from '@/errors/api.errors'
+import router from '@/router'
 import { loginSchema } from '@/schemas/auth'
-import { login } from '@/api/auth'
+import { useAuthStore } from '@/stores/auth'
+import { ref } from 'vue'
 
 const resolver = zodResolver(loginSchema)
+const authStore = useAuthStore()
 
 const initialValues = {
   username: '',
   password: '',
 }
 
-async function onSubmit(event: FormSubmitEvent) {
+const authenticationError = ref('')
 
+async function onSubmit(event: FormSubmitEvent) {
   if (!event.valid) {
     return
   }
 
   try {
-    const token = await login(event.values.username, event.values.password)
-    console.log(token)
+    await authStore.login(event.values.username, event.values.password)
+    await router.push('/')
   } catch (error) {
+    if (error instanceof ApiError) {
+      authenticationError.value = error.message
+      return
+    }
+
     console.error(error)
   }
 }
@@ -74,7 +84,14 @@ async function onSubmit(event: FormSubmitEvent) {
               {{ $form.password.error?.message }}
             </Message>
           </div>
-
+          <Message
+            v-if="authenticationError"
+            severity="error"
+            size="small"
+            variant="simple"
+            class="mb-3"
+            >{{ authenticationError }}</Message
+          >
           <Button type="submit" label="Se connecter" fluid />
         </Form>
       </template>

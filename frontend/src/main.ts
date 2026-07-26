@@ -9,6 +9,8 @@ import Aura from '@primeuix/themes/aura'
 
 import 'primeicons/primeicons.css'
 import 'primeflex/primeflex.css'
+import { useAuthStore } from '@/stores/auth.ts'
+import { setUnauthorizedHandler } from '@/api/api.ts'
 
 const app = createApp(App)
 
@@ -20,5 +22,13 @@ app.use(PrimeVue, {
     preset: Aura,
   },
 })
+
+const authStore = useAuthStore()
+
+setUnauthorizedHandler(() => {
+  authStore.logout()
+})
+
+await authStore.initialize()
 
 app.mount('#app')
