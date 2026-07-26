@@ -12,7 +12,7 @@ def test_should_create_and_return_user(client: TestClient, session: Session, pas
     clear_database(session)
 
     create_response = client.post(
-        "/users",
+        "/api/users",
         json={"username": "user_1", "password": "password_user_1"}
     )
     assert create_response.status_code == 201
@@ -43,7 +43,7 @@ def test_should_return_conflict_when_username_already_exists(client: TestClient,
 
     # When
     response = client.post(
-        "/users",
+        "/api/users",
         json={"username": "user_1", "password": "another_password"}
     )
 
@@ -56,7 +56,7 @@ def test_should_return_conflict_when_username_already_exists(client: TestClient,
     assert users[0].username == "user_1"
 
 def test_get_users_requires_authentication(client: TestClient):
-    response = client.get("/users")
+    response = client.get("/api/users")
 
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
@@ -67,7 +67,7 @@ def test_admin_can_get_all_users(client: TestClient, session: Session):
     create_user(session, "username_2", "password_2")
 
     create_user(session, username="john", password="secret", role=UserRole.ADMIN)
-    response = client.get("/users", headers=auth_headers(client, "john", "secret"))
+    response = client.get("/api/users", headers=auth_headers(client, "john", "secret"))
 
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
@@ -81,7 +81,7 @@ def test_non_admin_cannot_get_all_users(client: TestClient, session: Session):
     create_user(session, "username_2", "password_2")
 
     create_user(session, username="john", password="secret", role=UserRole.USER)
-    response = client.get("/users", headers=auth_headers(client))
+    response = client.get("/api/users", headers=auth_headers(client))
 
     assert response.status_code == status.HTTP_403_FORBIDDEN
     data = response.json()

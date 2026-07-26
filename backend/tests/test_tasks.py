@@ -10,7 +10,7 @@ from tests.helpers import clear_database, create_task, create_user, auth_headers
 
 def test_create_task_requires_authentication(client: TestClient):
     response = client.post(
-        "/tasks",
+        "/api/tasks",
         json={
             "title": "Buy milk",
             "status": "TODO",
@@ -24,7 +24,7 @@ def test_authenticated_user_can_create_task(client: TestClient, session: Session
 
     create_user(session)
     create_response = client.post(
-        "/tasks",
+        "/api/tasks",
         json={"title": "Apprendre FastAPI"},
         headers=auth_headers(client)
     )
@@ -40,7 +40,7 @@ def test_authenticated_user_can_create_task(client: TestClient, session: Session
     assert len(db_tasks) == 1
     assert db_tasks[0].title == "Apprendre FastAPI"
 
-    get_response = client.get("/tasks", headers=auth_headers(client))
+    get_response = client.get("/api/tasks", headers=auth_headers(client))
     assert get_response.status_code == 200
 
     data = get_response.json()
@@ -61,7 +61,7 @@ def test_authenticated_user_can_create_task(client: TestClient, session: Session
 def test_created_task_is_owned_by_authenticated_user(client: TestClient, session: Session):
     clear_database(session)
     user: User = create_user(session)
-    response = client.post("/tasks", json={"title": "Buy milk", "status": "TODO"}, headers=auth_headers(client))
+    response = client.post("/api/tasks", json={"title": "Buy milk", "status": "TODO"}, headers=auth_headers(client))
     assert response.status_code == status.HTTP_201_CREATED
     task = session.query(Task).one()
     assert task.owner_id == user.id
@@ -70,7 +70,7 @@ def test_get_tasks_returns_empty_list(client: TestClient, session: Session):
     clear_database(session)
 
     create_user(session)
-    response = client.get("/tasks", headers=auth_headers(client))
+    response = client.get("/api/tasks", headers=auth_headers(client))
 
     assert response.status_code == status.HTTP_200_OK
 
@@ -90,7 +90,7 @@ def test_get_tasks_with_pagination(client: TestClient, session: Session):
         create_task(session, user, title=f"Task {i}")
 
 
-    response = client.get("/tasks?page=0&size=10", headers=auth_headers(client))
+    response = client.get("/api/tasks?page=0&size=10", headers=auth_headers(client))
 
     data = response.json()
 
@@ -107,7 +107,7 @@ def test_get_tasks_filtered(client: TestClient, session: Session):
     create_task(session, user, status=TaskStatus.TODO)
     create_task(session, user, status=TaskStatus.DONE)
 
-    response = client.get("/tasks?status=TODO", headers=auth_headers(client))
+    response = client.get("/api/tasks?status=TODO", headers=auth_headers(client))
 
     data = response.json()
 
@@ -124,7 +124,7 @@ def test_should_return_tasks_sorted_by_title_ascending(client: TestClient, sessi
     create_task(session, user, title="Bravo", status=TaskStatus.TODO)
 
     # When
-    response = client.get("/tasks?sort=title&direction=asc", headers=auth_headers(client))
+    response = client.get("/api/tasks?sort=title&direction=asc", headers=auth_headers(client))
 
     # Then
     assert response.status_code == status.HTTP_200_OK
@@ -144,14 +144,14 @@ def test_should_return_tasks_sorted_by_title_ascending(client: TestClient, sessi
 def test_should_return_tasks_sorted_by_title_descending(client: TestClient, session: Session):
     clear_database(session)
     user: User = create_user(session)
-    
+
     # Given
     create_task(session, user, title="Charlie", status=TaskStatus.TODO)
     create_task(session, user, title="Alpha", status=TaskStatus.TODO)
     create_task(session, user, title="Bravo", status=TaskStatus.TODO)
 
     # When
-    response = client.get("/tasks?sort=title&direction=desc", headers=auth_headers(client))
+    response = client.get("/api/tasks?sort=title&direction=desc", headers=auth_headers(client))
 
     # Then
     assert response.status_code == status.HTTP_200_OK
@@ -176,7 +176,7 @@ def test_user_can_only_see_own_tasks(client: TestClient, session: Session):
     create_task(session, title="Bob task", owner=bob)
 
     response = client.get(
-        "/tasks",
+        "/api/tasks",
         headers=auth_headers(client, "alice", "secret"),
     )
 
@@ -199,7 +199,7 @@ def test_user_with_no_tasks_gets_empty_list(client: TestClient, session: Session
     create_task(session, title="Alice task 2", owner=alice)
 
     response = client.get(
-        "/tasks",
+        "/api/tasks",
         headers=auth_headers(client, "bob", "secret"),
     )
 
@@ -214,7 +214,7 @@ def test_user_can_get_own_task(client: TestClient, session: Session):
     user = create_user(session)
     task = create_task(session, owner=user)
 
-    response = client.get(f"/tasks/{task.id}", headers=auth_headers(client))
+    response = client.get(f"/api/tasks/{task.id}", headers=auth_headers(client))
 
     assert response.status_code == status.HTTP_200_OK
 
@@ -231,7 +231,7 @@ def test_user_cannot_get_another_users_task(client: TestClient, session: Session
 
     task = create_task(session, owner=alice)
 
-    response = client.get(f"/tasks/{task.id}", headers=auth_headers(client, username="bob"))
+    response = client.get(f"/api/tasks/{task.id}", headers=auth_headers(client, username="bob"))
 
     assert response.status_code == status.HTTP_404_NOT_FOUND
 
@@ -240,7 +240,7 @@ def test_get_task_requires_authentication(client: TestClient, session: Session):
     user = create_user(session)
     task = create_task(session, owner=user)
 
-    response = client.get(f"/tasks/{task.id}")
+    response = client.get(f"/api/tasks/{task.id}")
 
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
@@ -249,7 +249,7 @@ def test_user_can_update_own_task(client: TestClient, session: Session):
     user = create_user(session)
     task = create_task(session, owner=user)
 
-    response = client.patch(f"/tasks/{task.id}",
+    response = client.patch(f"/api/tasks/{task.id}",
         json={
             "title": "Updated title",
             "status": "IN_PROGRESS",
@@ -272,7 +272,7 @@ def test_user_cannot_update_another_users_task(client: TestClient, session: Sess
 
     # Act
     response = client.patch(
-        f"/tasks/{task.id}",
+        f"/api/tasks/{task.id}",
         json={
             "title": "Hacked",
             "status": "DONE",
@@ -294,7 +294,7 @@ def test_update_task_requires_authentication(client: TestClient, session: Sessio
     task = create_task(session, owner=user)
 
     response = client.patch(
-        f"/tasks/{task.id}",
+        f"/api/tasks/{task.id}",
         json={
             "title": "Updated title",
             "status": "DONE",
@@ -308,7 +308,7 @@ def test_user_can_delete_own_task(client: TestClient, session: Session):
     user = create_user(session)
     task = create_task(session, owner=user)
 
-    response = client.delete(f"/tasks/{task.id}", headers=auth_headers(client))
+    response = client.delete(f"/api/tasks/{task.id}", headers=auth_headers(client))
 
     assert response.status_code == status.HTTP_204_NO_CONTENT
 
@@ -322,7 +322,7 @@ def test_user_cannot_delete_another_users_task(client: TestClient, session: Sess
 
     task = create_task(session, owner=alice)
 
-    response = client.delete(f"/tasks/{task.id}", headers=auth_headers(client, username=bob.username))
+    response = client.delete(f"/api/tasks/{task.id}", headers=auth_headers(client, username=bob.username))
 
     assert response.status_code == status.HTTP_404_NOT_FOUND
     assert session.get(Task, task.id) is not None
@@ -332,6 +332,6 @@ def test_delete_task_requires_authentication(client: TestClient, session: Sessio
     user = create_user(session)
     task = create_task(session, owner=user)
 
-    response = client.delete(f"/tasks/{task.id}")
+    response = client.delete(f"/api/tasks/{task.id}")
 
     assert response.status_code == status.HTTP_401_UNAUTHORIZED

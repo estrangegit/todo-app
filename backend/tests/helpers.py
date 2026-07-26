@@ -32,7 +32,7 @@ def create_user(session: Session, username: str = "john", password: str = "secre
 
 def get_access_token(client: TestClient, username: str = "john", password: str = "secret") -> str:
     response = client.post(
-        "/auth/login",
+        "/api/auth/login",
         data={"username": username, "password": password},
     )
     assert response.status_code == 200, (
