@@ -4,36 +4,57 @@ import { onMounted, ref } from 'vue'
 import { getTasks } from '@/api/tasks'
 import type { Task } from '@/models/task'
 
+import TaskPaginator from '@/components/tasks/TaskPaginator.vue'
+import TaskTable from '@/components/tasks/TaskTable.vue'
+import TaskToolbar from '@/components/tasks/TaskToolbar.vue'
+import TaskDialog from '@/components/tasks/TaskDialog.vue'
+
 const tasks = ref<Task[]>([])
 const loading = ref(false)
-const error = ref('')
 
-onMounted(async () => {
+const page = ref(0)
+const rows = ref(10)
+const totalRecords = ref(0)
+
+const dialogVisible = ref(false)
+
+async function loadTasks() {
   loading.value = true
 
   try {
-    const page = await getTasks()
-    tasks.value = page.items
-  } catch {
-    error.value = 'Impossible de charger les tâches.'
+    const result = await getTasks(page.value, rows.value)
+
+    tasks.value = result.items
+    totalRecords.value = result.total_items
   } finally {
     loading.value = false
   }
-})
+}
+
+async function changePage(event: { page: number; rows: number }) {
+  page.value = event.page
+  rows.value = event.rows
+
+  await loadTasks()
+}
+
+function onCreateTask() {
+    dialogVisible.value = true
+}
+
+onMounted(loadTasks)
 </script>
 
 <template>
-  <h1>Mes tâches</h1>
+  <div class="flex flex-column justify-content-between h-full">
+    <TaskToolbar @create="onCreateTask"/>
 
-  <p v-if="loading">Chargement...</p>
+    <div class="flex-1 overflow-hidden">
+      <TaskTable :tasks="tasks" :loading="loading" />
+    </div>
 
-  <p v-else-if="error">
-    {{ error }}
-  </p>
+    <TaskPaginator :page="page" :rows="rows" :total-records="totalRecords" @page="changePage" />
+  </div>
 
-  <ul v-else>
-    <li v-for="task in tasks" :key="task.id">
-      {{ task.title }}
-    </li>
-  </ul>
+  <TaskDialog v-model:visible="dialogVisible" />
 </template>
