@@ -176,10 +176,22 @@ The seed:
 | alice | alice123 | USER |
 | bob | bob123 | USER |
 
-Run the seed.
+Start the database.
 
 ```bash
-docker compose exec backend python -m app.db.seed.seed
+docker compose -f docker-compose.dev.yml up db -d
+```
+
+Apply database migrations.
+
+```bash
+docker compose -f docker-compose.dev.yml run --rm backend alembic upgrade head
+```
+
+Load the development seed.
+
+```bash
+docker compose -f docker-compose.dev.yml run --rm backend python -m app.db.seed.seed
 ```
 
 ---
