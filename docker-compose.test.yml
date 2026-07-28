@@ -25,4 +25,4 @@ services:
       - ./backend/.env.test
     volumes:
       - ./backend:/app
-    command: ./scripts/run-tests.sh
+    command: sh ./scripts/run-tests.sh
