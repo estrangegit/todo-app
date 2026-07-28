@@ -8,7 +8,7 @@ const authStore = useAuthStore()
 
 <template>
   <Card>
-    <template #title> Bienvenue 👋 </template>
+    <template #title> Bienvenue {{ authStore.username }} </template>
 
     <template #content>
       <p>Gérez vos tâches grâce au menu de navigation.</p>

@@ -1,0 +1,19 @@
+name: Frontend Lint
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  frontend-lint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Build frontend image
+        run: docker compose -f docker-compose.test.yml build --no-cache frontend
+
+      - name: Run frontend lint
+        run: docker compose -f docker-compose.test.yml run --rm --no-deps frontend sh ./scripts/run-lint.sh

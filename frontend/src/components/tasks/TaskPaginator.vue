@@ -14,8 +14,8 @@ const emit = defineEmits<{
 
 <template>
   <Paginator
-    :first="page * rows"
-    :rows="rows"
+    :first="props.page * props.rows"
+    :rows="props.rows"
     :totalRecords="totalRecords"
     :rowsPerPageOptions="[5, 10, 20]"
     @page="emit('page', $event)"
