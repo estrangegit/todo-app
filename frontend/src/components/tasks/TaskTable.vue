@@ -2,6 +2,7 @@
 import Column from 'primevue/column'
 import DataTable from 'primevue/datatable'
 import Tag from 'primevue/tag'
+import { Button } from 'primevue'
 
 import { TaskStatus } from '@/enums/task-status'
 import type { Task } from '@/models/task'
@@ -35,7 +36,15 @@ function getSeverity(status: TaskStatus): TagSeverity {
     </Column>
 
     <Column header="Actions">
-      <template #body> ... </template>
+      <template #body="{ data }">
+        <Button
+          class="mr-1"
+          severity="secondary"
+          icon="pi pi-pencil"
+          @click="$emit('edit', data)"
+        />
+        <Button severity="secondary" icon="pi pi-trash" @click="$emit('delete', data)" />
+      </template>
     </Column>
   </DataTable>
 </template>

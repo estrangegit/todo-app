@@ -7,6 +7,7 @@ import router from './router'
 
 import Aura from '@primeuix/themes/aura'
 import PrimeVue from 'primevue/config'
+import ToastService from 'primevue/toastservice'
 
 import { setUnauthorizedHandler } from '@/api/api.ts'
 import { useAuthStore } from '@/stores/auth.ts'
@@ -23,6 +24,8 @@ app.use(PrimeVue, {
     preset: Aura,
   },
 })
+
+app.use(ToastService)
 
 const authStore = useAuthStore()
 

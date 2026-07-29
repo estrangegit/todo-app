@@ -1,11 +1,11 @@
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
+import { computed, ref } from 'vue'
 
 import { login as loginApi } from '@/api/auth'
-import { tokenService } from '@/services/token.service'
-import router from '@/router'
 import type { User } from '@/models/user'
-import { getCurrentUser } from '@/api/users'
+import router from '@/router'
+import { tokenService } from '@/services/token.service'
+import { userService } from '@/services/user.service'
 
 export const useAuthStore = defineStore('auth', () => {
   const token = ref<string | null>(tokenService.get())
@@ -19,7 +19,7 @@ export const useAuthStore = defineStore('auth', () => {
     token.value = response.access_token
     tokenService.set(response.access_token)
 
-    user.value = await getCurrentUser()
+    user.value = await userService.getCurrentUser()
   }
 
   async function initialize(): Promise<void> {
@@ -28,7 +28,7 @@ export const useAuthStore = defineStore('auth', () => {
     }
 
     try {
-      user.value = await getCurrentUser()
+      user.value = await userService.getCurrentUser()
     } catch {
       clearSession()
     }
