@@ -106,3 +106,67 @@ Database: todo_db
 Username: todo_user
 Password: 123456
 ```
+
+## Database migrations and seed data
+
+### 1. Forward the PostgreSQL service
+
+```bash
+kubectl port-forward service/postgres 5432:5432 -n todo-app
+```
+
+Keep this terminal open while running the following commands.
+
+---
+
+### 2. Activate the Python virtual environment
+
+```bash
+cd backend
+
+# Linux / macOS
+source .venv/bin/activate
+
+# Windows (PowerShell)
+.venv\Scripts\Activate.ps1
+```
+
+---
+
+### 3. Configure the local environment
+
+Use the development environment:
+
+```bash
+export APP_ENV=dev
+```
+
+Update the database connection so that it points to the forwarded PostgreSQL service.
+
+Either edit `.env.dev`:
+
+```text
+DATABASE_URL=postgresql+psycopg://todo_user:123456@localhost:5432/todo_db
+```
+
+or override it from the command line:
+
+```bash
+export DATABASE_URL=postgresql+psycopg://todo_user:123456@localhost:5432/todo_db
+```
+
+---
+
+### 4. Run Alembic migrations
+
+```bash
+alembic upgrade head
+```
+
+---
+
+### 5. Load the seed data
+
+```bash
+python scripts/seed_data.py
+```
