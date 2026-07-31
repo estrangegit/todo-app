@@ -40,6 +40,7 @@ jobs:
           push: true
           tags: |
             ghcr.io/${{ env.IMAGE_OWNER }}/todo-app-backend:latest
+            ghcr.io/${{ env.IMAGE_OWNER }}/todo-app-backend:${{ github.sha }}
 
   publish-frontend:
     name: Publish frontend image
@@ -70,3 +71,4 @@ jobs:
           push: true
           tags: |
             ghcr.io/${{ env.IMAGE_OWNER }}/todo-app-frontend:latest
+            ghcr.io/${{ env.IMAGE_OWNER }}/todo-app-frontend:${{ github.sha }}

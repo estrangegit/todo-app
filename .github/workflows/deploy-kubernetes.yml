@@ -1,17 +1,122 @@
-name: Test self-hosted runner
+name: Deploy to Kubernetes
 
 on:
   workflow_dispatch:
+    inputs:
+      reset:
+        description: Delete namespace before deployment
+        required: true
+        type: boolean
+        default: false
+
+      seed:
+        description: Apply database migrations and load sample data
+        required: true
+        type: boolean
+        default: false
+
+      imageTag:
+        description: Docker image tag
+        required: true
+        default: latest
 
 jobs:
-  test:
+  deploy:
     runs-on: self-hosted
+
+    permissions:
+      contents: read
+      packages: read
+
+    defaults:
+      run:
+        shell: pwsh
+
+    env:
+      NAMESPACE: todo-app
+      IMAGE_OWNER: ${{ github.repository_owner }}
 
     steps:
       - uses: actions/checkout@v7
 
-      - name: Show kubectl version
-        run: kubectl version
+      - name: Verify Kubernetes cluster
+        run: |
+          kubectl cluster-info
+          kubectl get nodes
 
-      - name: Show nodes
-        run: kubectl get nodes
+      - name: Reset namespace
+        if: ${{ inputs.reset }}
+        run: |
+          Write-Host "Deleting namespace '$env:NAMESPACE'..."
+
+          kubectl delete namespace $env:NAMESPACE --ignore-not-found=true
+
+          if ($LASTEXITCODE -eq 0) {
+              kubectl wait `
+                  --for=delete namespace/$env:NAMESPACE `
+                  --timeout=300s
+          }
+
+      - name: Deploy Kubernetes resources
+        run: |
+          kubectl apply -f infra/kubernetes/namespace.yaml
+
+          kubectl apply -n $env:NAMESPACE -f infra/kubernetes/postgres/
+          kubectl apply -n $env:NAMESPACE -f infra/kubernetes/backend/
+          kubectl apply -n $env:NAMESPACE -f infra/kubernetes/frontend/
+          kubectl apply -n $env:NAMESPACE -f infra/kubernetes/ingress/
+
+      - name: Wait for PostgreSQL
+        run: |
+          kubectl rollout status statefulset/postgres `
+              -n $env:NAMESPACE `
+              --timeout=300s
+
+      - name: Deploy application
+        run: |
+          $backendImage = "ghcr.io/$env:IMAGE_OWNER/todo-app-backend:${{ inputs.imageTag }}"
+          $frontendImage = "ghcr.io/$env:IMAGE_OWNER/todo-app-frontend:${{ inputs.imageTag }}"
+
+          Write-Host "Backend image : $backendImage"
+          Write-Host "Frontend image: $frontendImage"
+
+          kubectl set image deployment/backend `
+              backend=$backendImage `
+              -n $env:NAMESPACE
+
+          kubectl set image deployment/frontend `
+              frontend=$frontendImage `
+              -n $env:NAMESPACE
+
+          kubectl rollout status deployment/backend `
+              -n $env:NAMESPACE `
+              --timeout=300s
+
+          kubectl rollout status deployment/frontend `
+              -n $env:NAMESPACE `
+              --timeout=300s
+
+      - name: Initialize database
+        if: ${{ inputs.seed }}
+        run: |
+          kubectl exec deployment/backend `
+              -n $env:NAMESPACE -- `
+              alembic upgrade head
+
+          if ($LASTEXITCODE -ne 0) {
+              throw "Database migration failed."
+          }
+
+          kubectl exec deployment/backend `
+              -n $env:NAMESPACE -- `
+              python -m app.db.seed.seed
+
+          if ($LASTEXITCODE -ne 0) {
+              throw "Seed loading failed."
+          }
+
+      - name: Show cluster status
+        run: |
+          kubectl get pods -n $env:NAMESPACE
+          kubectl get svc -n $env:NAMESPACE
+          kubectl get ingress -n $env:NAMESPACE
