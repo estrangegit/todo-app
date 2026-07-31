@@ -71,6 +71,20 @@ kubectl describe pod <pod-name> -n todo-app
 
 ---
 
+### 6. Deploy the frontend
+
+```bash
+kubectl -n todo-app apply -f infra/kubernetes/frontend/
+```
+
+Verify the deployment:
+
+```bash
+kubectl get pods -n todo-app
+```
+
+---
+
 ## Access the services
 
 ### Backend
@@ -107,6 +121,18 @@ Username: todo_user
 Password: 123456
 ```
 
+### Frontend
+
+```bash
+kubectl port-forward service/frontend 80:80 -n todo-app
+```
+
+The application is available at:
+
+```text
+http://localhost:80
+```
+
 ## Database migrations and seed data
 
 ### 1. Forward the PostgreSQL service
@@ -138,7 +164,11 @@ source .venv/bin/activate
 Use the development environment:
 
 ```bash
+# Linux / macOS
 export APP_ENV=dev
+
+# Windows (PowerShell)
+$env:APP_ENV="dev"
 ```
 
 Update the database connection so that it points to the forwarded PostgreSQL service.
@@ -152,7 +182,11 @@ DATABASE_URL=postgresql+psycopg://todo_user:123456@localhost:5432/todo_db
 or override it from the command line:
 
 ```bash
+# Linux / macOS
 export DATABASE_URL=postgresql+psycopg://todo_user:123456@localhost:5432/todo_db
+
+# Windows (PowerShell)
+$env:DATABASE_URL="postgresql+psycopg://todo_user:123456@localhost:5432/todo_db"
 ```
 
 ---
@@ -168,5 +202,5 @@ alembic upgrade head
 ### 5. Load the seed data
 
 ```bash
-python scripts/seed_data.py
+python -m app.db.seed.seed
 ```
