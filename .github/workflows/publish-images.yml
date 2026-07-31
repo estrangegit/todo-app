@@ -64,7 +64,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: ./frontend
-          file: ./frontend/Dockerfile.dev
+          file: ./frontend/Dockerfile.prod
           provenance: false
           sbom: false
           push: true
