@@ -1,26 +1,43 @@
 # Kubernetes
 
-## Deploy the application
+## Prerequisites
 
-### 1. Push Docker images to GHCR
+Before deploying the application, ensure that:
 
-Backend:
+- Docker Desktop is installed with Kubernetes enabled.
+- A Kubernetes cluster has been created.
+- The latest backend and frontend images have been published to GHCR.
+- The NGINX Ingress Controller is installed.
+
+Install the Ingress Controller:
 
 ```bash
-docker tag todo-app-backend:latest ghcr.io/<github-user>/todo-app-backend:latest
-docker push ghcr.io/<github-user>/todo-app-backend:latest
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
 ```
 
-Frontend:
+Add the following entry to your hosts file:
 
-```bash
-docker tag todo-app-frontend:latest ghcr.io/<github-user>/todo-app-frontend:latest
-docker push ghcr.io/<github-user>/todo-app-frontend:latest
+```text
+127.0.0.1 todo.local
 ```
 
 ---
 
-### 2. Delete the existing environment
+## Publish Docker images
+
+Publish the latest images to GitHub Container Registry using the GitHub Actions workflow:
+
+```
+publish-images.yml
+```
+
+Wait until the workflow completes successfully before deploying.
+
+---
+
+# Deploy the application
+
+## 1. Delete the existing environment
 
 ```bash
 kubectl delete namespace todo-app
@@ -28,7 +45,7 @@ kubectl delete namespace todo-app
 
 ---
 
-### 3. Create the namespace
+## 2. Create the namespace
 
 ```bash
 kubectl apply -f infra/kubernetes/namespace.yaml
@@ -36,10 +53,10 @@ kubectl apply -f infra/kubernetes/namespace.yaml
 
 ---
 
-### 4. Deploy PostgreSQL
+## 3. Deploy PostgreSQL
 
 ```bash
-kubectl -n todo-app apply -f infra/kubernetes/postgres/
+kubectl apply -n todo-app -f infra/kubernetes/postgres/
 ```
 
 Verify that the pod is running:
@@ -50,10 +67,10 @@ kubectl get pods -n todo-app
 
 ---
 
-### 5. Deploy the backend
+## 4. Deploy the backend
 
 ```bash
-kubectl -n todo-app apply -f infra/kubernetes/backend/
+kubectl apply -n todo-app -f infra/kubernetes/backend/
 ```
 
 Verify the deployment:
@@ -71,10 +88,10 @@ kubectl describe pod <pod-name> -n todo-app
 
 ---
 
-### 6. Deploy the frontend
+## 5. Deploy the frontend
 
 ```bash
-kubectl -n todo-app apply -f infra/kubernetes/frontend/
+kubectl apply -n todo-app -f infra/kubernetes/frontend/
 ```
 
 Verify the deployment:
@@ -85,18 +102,43 @@ kubectl get pods -n todo-app
 
 ---
 
-## Access the services
+## 6. Deploy the Ingress
 
-### Backend
+```bash
+kubectl apply -n todo-app -f infra/kubernetes/ingress/
+```
+
+Verify the Ingress:
+
+```bash
+kubectl get ingress -n todo-app
+```
+
+---
+
+# Access the application
+
+Open:
+
+```text
+http://todo.local
+```
+
+The Ingress routes:
+
+- `/` → frontend
+- `/api` → backend
+
+---
+
+# Access individual services
+
+## Backend API
+
+For direct access to the API:
 
 ```bash
 kubectl port-forward service/backend 8000:8000 -n todo-app
-```
-
-The API is available at:
-
-```text
-http://localhost:8000
 ```
 
 OpenAPI documentation:
@@ -105,7 +147,9 @@ OpenAPI documentation:
 http://localhost:8000/docs
 ```
 
-### PostgreSQL
+---
+
+## PostgreSQL
 
 ```bash
 kubectl port-forward service/postgres 5432:5432 -n todo-app
@@ -121,35 +165,23 @@ Username: todo_user
 Password: 123456
 ```
 
-### Frontend
+---
 
-```bash
-kubectl port-forward service/frontend 80:80 -n todo-app
-```
+# Database migrations and seed data
 
-The application is available at:
-
-```text
-http://localhost:80
-```
-
-## Database migrations and seed data
-
-### 1. Forward the PostgreSQL service
+## 1. Forward the PostgreSQL service
 
 ```bash
 kubectl port-forward service/postgres 5432:5432 -n todo-app
 ```
 
-Keep this terminal open while running the following commands.
+Keep this terminal open.
 
 ---
 
-### 2. Activate the Python virtual environment
+## 2. Activate the Python virtual environment
 
 ```bash
-cd backend
-
 # Linux / macOS
 source .venv/bin/activate
 
@@ -159,7 +191,7 @@ source .venv/bin/activate
 
 ---
 
-### 3. Configure the local environment
+## 3. Configure the local environment
 
 Use the development environment:
 
@@ -171,15 +203,7 @@ export APP_ENV=dev
 $env:APP_ENV="dev"
 ```
 
-Update the database connection so that it points to the forwarded PostgreSQL service.
-
-Either edit `.env.dev`:
-
-```text
-DATABASE_URL=postgresql+psycopg://todo_user:123456@localhost:5432/todo_db
-```
-
-or override it from the command line:
+Override the database connection:
 
 ```bash
 # Linux / macOS
@@ -191,15 +215,16 @@ $env:DATABASE_URL="postgresql+psycopg://todo_user:123456@localhost:5432/todo_db"
 
 ---
 
-### 4. Run Alembic migrations
+## 4. Apply database migrations
 
 ```bash
+cd backend
 alembic upgrade head
 ```
 
 ---
 
-### 5. Load the seed data
+## 5. Load seed data
 
 ```bash
 python -m app.db.seed.seed
