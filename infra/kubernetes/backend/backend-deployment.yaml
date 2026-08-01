@@ -33,6 +33,24 @@ spec:
           ports:
             - containerPort: 8000
 
+          readinessProbe:
+            httpGet:
+              path: /api/health/ready
+              port: 8000
+            initialDelaySeconds: 2
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 3
+
+          livenessProbe:
+            httpGet:
+              path: /api/health/live
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 20
+            timeoutSeconds: 2
+            failureThreshold: 3
+
           envFrom:
             - configMapRef:
                 name: backend-config
