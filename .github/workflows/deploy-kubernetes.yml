@@ -3,8 +3,14 @@ name: Deploy to Kubernetes
 on:
   workflow_dispatch:
     inputs:
-      reset:
-        description: Delete namespace before deployment
+      resetApplication:
+        description: Delete application namespace before deployment
+        required: true
+        type: boolean
+        default: false
+
+      resetObservability:
+        description: Delete observability namespace before deployment
         required: true
         type: boolean
         default: false
@@ -34,18 +40,24 @@ jobs:
 
     env:
       NAMESPACE: todo-app
+      OBSERVABILITY_NAMESPACE: observability
       IMAGE_OWNER: ${{ github.repository_owner }}
 
     steps:
-      - uses: actions/checkout@v7
+      - name: Checkout repository
+        uses: actions/checkout@v7
 
       - name: Verify Kubernetes cluster
         run: |
           kubectl cluster-info
           kubectl get nodes
 
-      - name: Reset namespace
-        if: ${{ inputs.reset }}
+      # ------------------------------------------------------------
+      # Reset namespaces
+      # ------------------------------------------------------------
+
+      - name: Reset application namespace
+        if: ${{ inputs.resetApplication }}
         run: |
           Write-Host "Deleting namespace '$env:NAMESPACE'..."
 
@@ -57,14 +69,42 @@ jobs:
                   --timeout=300s
           }
 
-      - name: Deploy Kubernetes resources
+      - name: Reset observability namespace
+        if: ${{ inputs.resetObservability }}
         run: |
-          kubectl apply -f infra/kubernetes/namespace.yaml
+          Write-Host "Deleting namespace '$env:OBSERVABILITY_NAMESPACE'..."
 
-          kubectl apply -n $env:NAMESPACE -f infra/kubernetes/postgres/
-          kubectl apply -n $env:NAMESPACE -f infra/kubernetes/backend/
-          kubectl apply -n $env:NAMESPACE -f infra/kubernetes/frontend/
-          kubectl apply -n $env:NAMESPACE -f infra/kubernetes/ingress/
+          kubectl delete namespace $env:OBSERVABILITY_NAMESPACE --ignore-not-found=true
+
+          if ($LASTEXITCODE -eq 0) {
+              kubectl wait `
+                  --for=delete namespace/$env:OBSERVABILITY_NAMESPACE `
+                  --timeout=300s
+          }
+
+      # ------------------------------------------------------------
+      # Application
+      # ------------------------------------------------------------
+
+      - name: Deploy Kubernetes application resources
+        run: |
+          kubectl apply -f infra/kubernetes/todo-app/namespace.yaml
+
+          kubectl apply `
+              -n $env:NAMESPACE `
+              -f infra/kubernetes/todo-app/postgres/
+
+          kubectl apply `
+              -n $env:NAMESPACE `
+              -f infra/kubernetes/todo-app/backend/
+
+          kubectl apply `
+              -n $env:NAMESPACE `
+              -f infra/kubernetes/todo-app/frontend/
+
+          kubectl apply `
+              -n $env:NAMESPACE `
+              -f infra/kubernetes/todo-app/ingress/
 
       - name: Wait for PostgreSQL
         run: |
@@ -72,7 +112,7 @@ jobs:
               -n $env:NAMESPACE `
               --timeout=300s
 
-      - name: Deploy application
+      - name: Deploy application images
         run: |
           $backendImage = "ghcr.io/$env:IMAGE_OWNER/todo-app-backend:${{ inputs.imageTag }}"
           $frontendImage = "ghcr.io/$env:IMAGE_OWNER/todo-app-frontend:${{ inputs.imageTag }}"
@@ -96,6 +136,10 @@ jobs:
               -n $env:NAMESPACE `
               --timeout=300s
 
+      # ------------------------------------------------------------
+      # Database initialization
+      # ------------------------------------------------------------
+
       - name: Initialize database
         if: ${{ inputs.seed }}
         run: |
@@ -115,8 +159,82 @@ jobs:
               throw "Seed loading failed."
           }
 
+      # ------------------------------------------------------------
+      # Observability
+      # ------------------------------------------------------------
+
+      - name: Deploy observability resources
+        run: |
+          kubectl apply `
+              -f infra/kubernetes/observability/namespace.yaml
+
+          kubectl apply `
+              -f infra/kubernetes/observability/loki/
+
+          kubectl apply `
+              -f infra/kubernetes/observability/alloy/
+
+          kubectl apply `
+              -f infra/kubernetes/observability/grafana/
+
+      - name: Restart observability workloads
+        if: ${{ !inputs.resetObservability }}
+        run: |
+          Write-Host "Restarting observability workloads to apply configuration changes..."
+
+          kubectl rollout restart deployment/loki `
+              -n $env:OBSERVABILITY_NAMESPACE
+
+          kubectl rollout restart daemonset/alloy `
+              -n $env:OBSERVABILITY_NAMESPACE
+
+          kubectl rollout restart deployment/grafana `
+              -n $env:OBSERVABILITY_NAMESPACE
+
+      - name: Wait for observability stack
+        run: |
+          kubectl rollout status deployment/loki `
+              -n $env:OBSERVABILITY_NAMESPACE `
+              --timeout=300s
+
+          kubectl rollout status daemonset/alloy `
+              -n $env:OBSERVABILITY_NAMESPACE `
+              --timeout=300s
+
+          kubectl rollout status deployment/grafana `
+              -n $env:OBSERVABILITY_NAMESPACE `
+              --timeout=300s
+
+      # ------------------------------------------------------------
+      # Status
+      # ------------------------------------------------------------
+
       - name: Show cluster status
         run: |
-          kubectl get pods -n $env:NAMESPACE
-          kubectl get svc -n $env:NAMESPACE
-          kubectl get ingress -n $env:NAMESPACE
+          Write-Host ""
+          Write-Host "=== Application ==="
+          Write-Host ""
+
+          kubectl get pods `
+              -n $env:NAMESPACE `
+              -o wide
+
+          kubectl get svc `
+              -n $env:NAMESPACE
+
+          kubectl get ingress `
+              -n $env:NAMESPACE
+
+          Write-Host ""
+          Write-Host "=== Observability ==="
+          Write-Host ""
+
+          kubectl get pods `
+              -n $env:OBSERVABILITY_NAMESPACE `
+              -o wide
+
+          kubectl get svc `
+              -n $env:OBSERVABILITY_NAMESPACE
+
+          kubectl get daemonsets `
+              -n $env:OBSERVABILITY_NAMESPACE
