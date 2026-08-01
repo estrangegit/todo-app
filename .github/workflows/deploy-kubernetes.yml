@@ -22,9 +22,8 @@ on:
         default: false
 
       imageTag:
-        description: Docker image tag
+        description: Docker image tag (Git commit SHA)
         required: true
-        default: latest
 
 jobs:
   deploy:
