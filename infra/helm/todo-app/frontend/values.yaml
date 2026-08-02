@@ -1,0 +1,12 @@
+replicaCount: 3
+
+image:
+  repository: ghcr.io/estrangegit/todo-app-frontend
+  tag: ""
+  pullPolicy: IfNotPresent
+
+container:
+  port: 80
+
+service:
+  port: 80

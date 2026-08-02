@@ -40,16 +40,23 @@ jobs:
     env:
       NAMESPACE: todo-app
       OBSERVABILITY_NAMESPACE: observability
-      IMAGE_OWNER: ${{ github.repository_owner }}
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
 
+      # ------------------------------------------------------------
+      # Verify tools and cluster
+      # ------------------------------------------------------------
+
       - name: Verify Kubernetes cluster
         run: |
           kubectl cluster-info
           kubectl get nodes
+
+      - name: Verify Helm
+        run: |
+          helm version
 
       # ------------------------------------------------------------
       # Reset namespaces
@@ -82,58 +89,40 @@ jobs:
           }
 
       # ------------------------------------------------------------
-      # Application
+      # Application namespace
       # ------------------------------------------------------------
 
-      - name: Deploy Kubernetes application resources
+      - name: Create application namespace
         run: |
-          kubectl apply -f infra/kubernetes/todo-app/namespace.yaml
-
           kubectl apply `
-              -n $env:NAMESPACE `
-              -f infra/kubernetes/todo-app/postgres/
+              -f infra/kubernetes/todo-app/namespace.yaml
 
-          kubectl apply `
-              -n $env:NAMESPACE `
-              -f infra/kubernetes/todo-app/backend/
+      # ------------------------------------------------------------
+      # PostgreSQL
+      # ------------------------------------------------------------
 
-          kubectl apply `
-              -n $env:NAMESPACE `
-              -f infra/kubernetes/todo-app/frontend/
-
-          kubectl apply `
-              -n $env:NAMESPACE `
-              -f infra/kubernetes/todo-app/ingress/
-
-      - name: Wait for PostgreSQL
+      - name: Deploy PostgreSQL
         run: |
-          kubectl rollout status statefulset/postgres `
-              -n $env:NAMESPACE `
-              --timeout=300s
+          helm upgrade --install postgres `
+              infra/helm/todo-app/postgres `
+              --namespace $env:NAMESPACE `
+              --wait `
+              --timeout 5m
 
-      - name: Deploy application images
+      # ------------------------------------------------------------
+      # Backend
+      # ------------------------------------------------------------
+
+      - name: Deploy backend
         run: |
-          $backendImage = "ghcr.io/$env:IMAGE_OWNER/todo-app-backend:${{ inputs.imageTag }}"
-          $frontendImage = "ghcr.io/$env:IMAGE_OWNER/todo-app-frontend:${{ inputs.imageTag }}"
+          Write-Host "Deploying backend image tag: ${{ inputs.imageTag }}"
 
-          Write-Host "Backend image : $backendImage"
-          Write-Host "Frontend image: $frontendImage"
-
-          kubectl set image deployment/backend `
-              backend=$backendImage `
-              -n $env:NAMESPACE
-
-          kubectl set image deployment/frontend `
-              frontend=$frontendImage `
-              -n $env:NAMESPACE
-
-          kubectl rollout status deployment/backend `
-              -n $env:NAMESPACE `
-              --timeout=300s
-
-          kubectl rollout status deployment/frontend `
-              -n $env:NAMESPACE `
-              --timeout=300s
+          helm upgrade --install backend `
+              infra/helm/todo-app/backend `
+              --namespace $env:NAMESPACE `
+              --set-string image.tag="${{ inputs.imageTag }}" `
+              --wait `
+              --timeout 5m
 
       # ------------------------------------------------------------
       # Database initialization
@@ -157,6 +146,33 @@ jobs:
           if ($LASTEXITCODE -ne 0) {
               throw "Seed loading failed."
           }
+
+      # ------------------------------------------------------------
+      # Frontend
+      # ------------------------------------------------------------
+
+      - name: Deploy frontend
+        run: |
+          Write-Host "Deploying frontend image tag: ${{ inputs.imageTag }}"
+
+          helm upgrade --install frontend `
+              infra/helm/todo-app/frontend `
+              --namespace $env:NAMESPACE `
+              --set-string image.tag="${{ inputs.imageTag }}" `
+              --wait `
+              --timeout 5m
+
+      # ------------------------------------------------------------
+      # Ingress
+      # ------------------------------------------------------------
+
+      - name: Deploy ingress
+        run: |
+          helm upgrade --install ingress `
+              infra/helm/todo-app/ingress `
+              --namespace $env:NAMESPACE `
+              --wait `
+              --timeout 5m
 
       # ------------------------------------------------------------
       # Observability
@@ -211,6 +227,13 @@ jobs:
       - name: Show cluster status
         run: |
           Write-Host ""
+          Write-Host "=== Helm releases ==="
+          Write-Host ""
+
+          helm list `
+              -n $env:NAMESPACE
+
+          Write-Host ""
           Write-Host "=== Application ==="
           Write-Host ""
 
@@ -222,6 +245,9 @@ jobs:
               -n $env:NAMESPACE
 
           kubectl get ingress `
+              -n $env:NAMESPACE
+
+          kubectl get pvc `
               -n $env:NAMESPACE
 
           Write-Host ""

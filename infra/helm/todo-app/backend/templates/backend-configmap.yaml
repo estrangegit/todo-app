@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+
+metadata:
+  name: backend-config
+
+data:
+  PROJECT_NAME: Todo API
+  PROJECT_VERSION: {{ .Chart.AppVersion | quote }}
+  DEBUG: {{ .Values.config.debug | quote }}
+
+  JWT_ALGORITHM: HS256
+  JWT_ACCESS_TOKEN_EXPIRE_MINUTES: {{ .Values.config.jwt.accessTokenExpireMinutes | quote }}

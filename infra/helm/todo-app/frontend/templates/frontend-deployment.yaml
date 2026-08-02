@@ -1,29 +1,33 @@
 apiVersion: apps/v1
 kind: Deployment
+
 metadata:
   name: frontend
-  namespace: todo-app
+
 spec:
-  replicas: 3
+  replicas: {{ .Values.replicaCount }}
+
   selector:
     matchLabels:
       app: frontend
+
   template:
     metadata:
       labels:
         app: frontend
+
     spec:
       containers:
         - name: frontend
-          image: ghcr.io/estrangegit/todo-app-frontend:latest
-          imagePullPolicy: IfNotPresent
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
-            - containerPort: 80
+            - containerPort: {{ .Values.container.port }}
 
           readinessProbe:
             httpGet:
               path: /
-              port: 80
+              port: {{ .Values.container.port }}
             periodSeconds: 10
             timeoutSeconds: 2
             failureThreshold: 3
@@ -31,7 +35,7 @@ spec:
           livenessProbe:
             httpGet:
               path: /
-              port: 80
+              port: {{ .Values.container.port }}
             periodSeconds: 20
             timeoutSeconds: 2
             failureThreshold: 3

@@ -1,0 +1,13 @@
+ingress:
+  className: nginx
+  host: todo.local
+
+frontend:
+  service:
+    name: frontend
+    port: 80
+
+backend:
+  service:
+    name: backend
+    port: 8000

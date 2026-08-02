@@ -1,0 +1,19 @@
+image:
+  repository: postgres
+  tag: "17"
+  pullPolicy: IfNotPresent
+
+container:
+  port: 5432
+
+service:
+  port: 5432
+
+database:
+  name: "todo_db"
+  username: "todo_user"
+  password: "123456"
+
+persistence:
+  accessMode: ReadWriteOnce
+  size: 200Mi
